@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111211" />
+    <meta name="description" content="Ajayveer Sandhu — Computational Mathematics at the University of Waterloo. Selected work, on air." />
+    <title>Ajayveer Sandhu</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/main.js" defer></script>
+  </head>
+  <body>
+    <div class="room-glow" aria-hidden="true"></div>
+    <header class="topbar">
+      <span class="location">WATERLOO, ON <span>43.46° N · 80.52° W</span></span>
+      <button class="volume" id="volume" aria-label="Volume: half. Set to full">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave-small" d="M15 8a6 6 0 0 1 0 8"/><path class="wave-large" d="M18 5a10 10 0 0 1 0 14"/></svg>
+        <span id="volume-label">50%</span>
+      </button>
+    </header>
+    <main class="stage">
+      <section class="introduction" aria-labelledby="name">
+        <div class="identity">
+          <h1 id="name">Ajayveer<br />Sandhu<span class="neon-period">.</span></h1>
+          <p class="role">Computational Mathematics<br /><span>University of Waterloo</span></p>
+        </div>
+        <section class="work" aria-label="Experience">
+          <div class="practical" aria-hidden="true"><div class="light-bar"></div><div class="light-cone"></div></div>
+          <p class="section-label">SELECTED EXPERIENCE <span>01 — 03</span></p>
+          <div class="experience-list" id="experience-list" inert>
+            <button class="experience" data-channel="fincapes" aria-pressed="false"><span class="year">2026</span><span class="job"><strong>Fincapes</strong><span>Data Scientist</span></span><span class="dates">Sep–Dec</span><span class="selection" aria-hidden="true">↗</span></button>
+            <button class="experience" data-channel="statcan" aria-pressed="false"><span class="year">—</span><span class="job"><strong>Statistics Canada</strong><span>Data Engineer</span></span><span class="dates">Jan–Apr</span><span class="selection" aria-hidden="true">↗</span></button>
+            <button class="experience" data-channel="zocratic" aria-pressed="false"><span class="year">2025</span><span class="job"><strong>ZocraticMMA</strong><span>UFC analytics platform</span></span><span class="dates"></span><span class="selection" aria-hidden="true">↗</span></button>
+          </div>
+          <p class="work-hint">A little of what I’ve been working on.</p>
+        </section>
+      </section>
+      <section class="television-area" aria-label="Interactive television">
+        <div class="television" id="television">
+          <div class="screw screw-tl" aria-hidden="true"></div><div class="screw screw-tr" aria-hidden="true"></div>
+          <div class="bezel"><div class="glass" id="glass">
+            <div class="off-screen" id="off-screen">on</div>
+            <div class="channel" id="channel" hidden aria-live="polite"></div>
+            <div class="static" id="static" aria-hidden="true"></div>
+            <div class="glass-reflection" aria-hidden="true"></div>
+          </div></div>
+          <div class="tv-controls">
+            <div class="tv-brand">SANDHU<span>PERSONAL BROADCAST SYSTEM</span></div>
+            <div class="speaker-grille" aria-hidden="true"></div>
+            <button id="power" class="power" aria-label="Turn on television"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v9M7 6a8 8 0 1 0 10 0"/></svg></button>
+          </div>
+          <div class="screw screw-bl" aria-hidden="true"></div><div class="screw screw-br" aria-hidden="true"></div>
+        </div>
+        <div class="tv-feet" aria-hidden="true"><i></i><i></i></div>
+        <div class="shelf" aria-hidden="true"></div>
+        <div class="tv-caption"><span id="broadcast-status">STANDBY</span><span id="power-hint">Make yourself at home. Press the red button.</span></div>
+      </section>
+    </main>
+    <footer><span class="footer-note">A person behind the pixels.</span><a id="email" href="#contact">Say hello <span>↗</span></a></footer>
+    <dialog id="contact"><button id="close-contact" aria-label="Close contact dialog">×</button><p>Let’s talk.</p><span>Ajay’s email address will go here.</span><small>Contact details are still being added to this first draft.</small></dialog>
+  </body>
+</html>
