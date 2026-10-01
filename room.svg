@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <linearGradient id="wall" x2="0" y2="1000" gradientUnits="userSpaceOnUse"><stop stop-color="#11151d"/><stop offset=".65" stop-color="#090c12"/><stop offset="1" stop-color="#151320"/></linearGradient>
+    <linearGradient id="window" x2="0" y2="650" gradientUnits="userSpaceOnUse"><stop stop-color="#17102b"/><stop offset="1" stop-color="#07232b"/></linearGradient>
+    <linearGradient id="floor" x1="0" y1="790" x2="0" y2="1000" gradientUnits="userSpaceOnUse"><stop stop-color="#101622"/><stop offset="1" stop-color="#06070d"/></linearGradient>
+    <pattern id="windows" width="24" height="32" patternUnits="userSpaceOnUse"><rect x="5" y="7" width="4" height="10" fill="#6f9baa" opacity=".35"/><rect x="14" y="7" width="3" height="10" fill="#926894" opacity=".22"/></pattern>
+    <pattern id="vents" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 2h8" stroke="#647488" stroke-opacity=".3" stroke-width="2"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <path fill="url(#wall)" d="M0 0h1600v1000H0z"/>
+  <!-- Heavy room panels and inset joints. -->
+  <g stroke="#333b49" stroke-opacity=".65">
+    <path d="M0 115h430l42 38h613l56-38h459M0 123h426l42 38h621l56-38h455"/>
+    <path d="M78 0v790M88 0v790M1510 0v790M1520 0v790M590 161v600l-30 35v154M598 161v444l-30 35v145"/>
+    <path d="M88 255h400v449H88M98 265h380v429H98M88 727h421l50 63h571l57-63h323"/>
+    <path d="M0 790h1600M0 801h1600"/>
+  </g>
+  <!-- A city window set into the right-hand wall. -->
+  <path d="M1150 185h330v498h-330z" fill="#04070e" stroke="#465060" stroke-width="3"/>
+  <path d="M1163 198h304v472h-304z" fill="url(#window)"/>
+  <g fill="#090c19" stroke="#384157" stroke-opacity=".55">
+    <path d="M1163 384h52V273h70v397h-122z"/><path d="M1269 402h48V238h79v432h-127z"/>
+    <path d="M1380 339h41v-64h46v395h-87z"/>
+  </g>
+  <g fill="url(#windows)"><path d="M1225 285h48v360h-48zM1326 259h61v391h-61zM1427 295h40v360h-40z"/></g>
+  <path d="M1355 238v-54m-8 39h16M1250 273v-51" stroke="#707892"/>
+  <path d="M1204 440h6v102h-6z" fill="#41cedb" opacity=".65"/><path d="M1382 369h7v89h-7z" fill="#d164a1" opacity=".7"/>
+  <g opacity=".4" filter="url(#glow)"><path d="M1204 440h6v102h-6z" fill="#41cedb"/><path d="M1382 369h7v89h-7z" fill="#e86bb4"/></g>
+  <g stroke="#93b2c6" stroke-opacity=".13"><path d="m1199 211-24 80m67-61-17 61m81-83-27 104m103-83-24 92m77-81-23 76m-225 83-18 70m166-39-22 85m104-70-22 77m-80 45-21 74m-178-92-17 72"/></g>
+  <path d="M1150 525h330M1312 185v498" stroke="#080d17" stroke-width="9"/>
+  <!-- Ceiling conduits, brackets, and quiet edge lighting. -->
+  <g stroke="#333c48" stroke-width="7"><path d="M0 69h654l29 29h675V0"/><path d="M1570 0v699l-33 34v98"/></g>
+  <g stroke="#6c7788" stroke-opacity=".25" stroke-width="2"><path d="M0 65h656l29 29h669V0"/><path d="M1566 0v697l-33 34v100"/></g>
+  <g fill="#29323e"><path d="M168 56h12v25h-12zM398 56h12v25h-12zM906 85h12v25h-12zM1241 85h12v25h-12zM1557 199h25v12h-25zM1557 487h25v12h-25z"/></g>
+  <g stroke="#56cbd8"><path d="M89 173v202M1511 547v160" stroke-width="3"/><path d="M89 173v202M1511 547v160" stroke-width="11" opacity=".4" filter="url(#glow)"/></g>
+  <g stroke="#b568a8"><path d="M1146 122h239" stroke-width="2"/><path d="M1146 122h239" stroke-width="10" opacity=".3" filter="url(#glow)"/></g>
+  <path d="M125 180h121v36H125zM1278 713h187v46h-187z" fill="url(#vents)" stroke="#394352"/>
+  <g fill="#626e7b" font-family="monospace" font-size="10" letter-spacing="3"><text x="127" y="244">SECTOR / 07</text><text x="1300" y="702">NIGHT TRANSMISSION</text></g>
+  <path d="M116 743h63v13h-63z" fill="#958265" opacity=".35"/>
+  <path d="M0 802h1600v198H0z" fill="url(#floor)"/>
+  <g stroke="#394458" stroke-opacity=".4"><path d="M0 863h1600M0 954h1600M264 802 40 1000M580 802l-87 198M1008 802l105 198M1330 802l246 198"/></g>
+  <g filter="url(#glow)" opacity=".12"><path d="m1162 824 107 161h94l-122-161z" fill="#47c4d5"/><path d="m1390 814 77 86h50l-92-86z" fill="#d260b3"/></g>
+</svg>

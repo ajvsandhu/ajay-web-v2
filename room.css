@@ -1,0 +1,37 @@
+/* The room is revealed by the same .on state as the experience and portrait. */
+:root { background: #000; }
+body { background: #000; isolation: isolate; }
+body::before { opacity: 0; transition: opacity 650ms ease; }
+body.on::before { opacity: .025; }
+.cyber-room { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 650ms ease; background: #080a10; }
+.on .cyber-room { opacity: 1; }
+/* The GIF's bottom 98 of 720 rows are empty ground: keep them below the viewport, then scale just enough to cover the rest. */
+.room-architecture { position: absolute; left: 50%; bottom: 0; width: max(100%, 100vh * 1280 / 622); aspect-ratio: 1280 / 720; transform: translate(-50%, calc(100% * 98 / 720)); background: url('/robot-alley.gif') 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+.room-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 29% 55%, #050609b8 0%, #05060973 23%, transparent 55%), radial-gradient(ellipse at 80% 52%, #2596ac0d, transparent 48%), linear-gradient(90deg, #0003, transparent 14%, transparent 85%, #0004); }
+.role, .socials, .location, .work, footer, .tv-caption, .tv-feet { opacity: 0; visibility: hidden; transition: opacity 650ms ease, visibility 650ms; }
+.on .role, .on .socials, .on .location, .on .work, .on footer, .on .tv-caption, .on .tv-feet { opacity: 1; visibility: visible; }
+.section-label, .experience-list, .work-hint { opacity: 0; transition: opacity 650ms ease; }
+.volume { color: #737b86; }
+h1 { color: #c8f7ff; text-shadow: 0 0 2px #f1ffff, 0 0 14px #57cbe57a, 0 0 42px #31a2c13d; }
+.on .work { border-radius: 2px; background: linear-gradient(#0a14204a, #090b100a); }
+.role, .social { color: #a6e6f2; }
+.role span { color: #6fb8c8; }
+.section-label { color: #7fc9d9; }
+.section-label span { color: #5b9fb0; }
+.company { color: #c8f7ff; }
+.title { color: #93d4e2; }
+.year, .dates { color: #7fc0cf; }
+.work-hint { color: #6fb0c0; }
+.experience, .experience:last-child { border-color: #8fe6f526; }
+.experience:hover { background: #57cbe50a; }
+@media (max-width: 760px) {
+  .room-architecture { transform: translate(-62%, calc(100% * 98 / 720)); }
+  .room-light { background: linear-gradient(90deg, #020408bc, #02040880 55%, #02040845); }
+  /* Keep dimensions stable as the light comes up. */
+  .stage, body:not(.on) .stage { padding-top: 15px; gap: 20px; }
+  h1, body:not(.on) h1 { font-size: min(40px, calc((100vw - 210px) / 9)); }
+  .identity, body:not(.on) .identity { padding-bottom: 24px; }
+  .experience, body:not(.on) .experience { padding-top: 10px; padding-bottom: 10px; }
+  .work-hint, body:not(.on) .work-hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .cyber-room, .role, .location, .work, footer, .tv-caption, .tv-feet, body::before { transition: none; } }

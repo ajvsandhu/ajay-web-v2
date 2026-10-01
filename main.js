@@ -5,7 +5,6 @@ const content = {
   statcan: { number: '02', title: 'Statistics Canada', caption: '', image: null, placeholder: 'T4 data pipelines · image to come', type: 'project' },
   zocratic: { number: '03', title: 'ZocraticMMA', caption: 'I built a UFC analytics platform that 50+ people use to compare fighters.', image: null, placeholder: 'Fighter comparison · image to come', type: 'project' },
 };
-const emailAddress = ''; // Add the confirmed address here.
 const returnClip = ''; // Add a local 1–2 second video URL when selected.
 let powered = false;
 let current = 'home';
@@ -55,6 +54,7 @@ function cancelTransition() {
 }
 function showChannel(key) {
   cancelTransition();
+  $('#off-screen').hidden = true;
   const item = content[key];
   const channel = $('#channel');
   channel.replaceChildren();
@@ -66,8 +66,8 @@ function showChannel(key) {
   channel.append(badge, visual, caption); channel.hidden = false;
   document.body.classList.add('on');
   $('#experience-list').inert = false;
-  $('#broadcast-status').textContent = `CH ${item.number} · ${key === 'home' ? 'HOME' : item.title.toUpperCase()}`;
-  $('#power-hint').textContent = key === 'home' ? 'Choose an experience to tune in.' : 'Press red to come back home.';
+  $('#broadcast-status').textContent = key === 'home' ? '' : `CH ${item.number} · ${item.title.toUpperCase()}`;
+  $('#power-hint').textContent = key === 'home' ? '' : 'Press red to come back home.';
 }
 function selectChannel(key, first = false) {
   const interrupted = transitioning;
@@ -103,10 +103,4 @@ document.querySelectorAll('.experience').forEach(row => row.addEventListener('cl
     window.scrollTo({ top, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
   }
 }));
-$('#email').addEventListener('click', event => {
-  if (!emailAddress) { event.preventDefault(); $('#contact').showModal(); }
-});
-if (emailAddress) $('#email').href = `mailto:${emailAddress}`;
-$('#close-contact').addEventListener('click', () => $('#contact').close());
-$('#contact').addEventListener('click', event => { if (event.target === $('#contact')) $('#contact').close(); });
 updateVolume();
