@@ -14,10 +14,8 @@ body.on::before { opacity: .025; }
 .volume { color: #737b86; }
 h1 { color: #c8f7ff; text-shadow: 0 0 2px #f1ffff, 0 0 14px #57cbe57a, 0 0 42px #31a2c13d; }
 .on .work { border-radius: 2px; background: linear-gradient(#0a14204a, #090b100a); }
-.role, .social { color: #a6e6f2; }
-.role span { color: #6fb8c8; }
+.role { color: #a6e6f2; }
 .section-label { color: #7fc9d9; }
-.section-label span { color: #5b9fb0; }
 .company { color: #c8f7ff; }
 .title { color: #93d4e2; }
 .year, .dates { color: #7fc0cf; }

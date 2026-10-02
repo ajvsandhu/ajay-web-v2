@@ -3,7 +3,8 @@ const content = {
   home: { number: '00', title: 'Ajayveer Sandhu', caption: 'Computational Mathematics · University of Waterloo', image: null, placeholder: 'Your portrait here', type: 'portrait' },
   fincapes: { number: '01', title: 'Fincapes', caption: 'I built models researchers use to study geothermal energy in Indonesia.', image: null, placeholder: 'Geothermal research · image to come', type: 'project' },
   statcan: { number: '02', title: 'Statistics Canada', caption: '', image: null, placeholder: 'T4 data pipelines · image to come', type: 'project' },
-  zocratic: { number: '03', title: 'ZocraticMMA', caption: 'I built a UFC analytics platform that 50+ people use to compare fighters.', image: null, placeholder: 'Fighter comparison · image to come', type: 'project' },
+  uwaterloo: { number: '03', title: 'UWaterloo', caption: 'I study Computational Mathematics at the University of Waterloo.', image: null, placeholder: 'Campus · image to come', type: 'project' },
+  zocratic: { number: '04', title: 'ZocraticMMA', caption: 'I built a UFC analytics platform that 50+ people use to compare fighters.', image: null, placeholder: 'Fighter comparison · image to come', type: 'project' },
 };
 const returnClip = ''; // Add a local 1–2 second video URL when selected.
 let powered = false;
