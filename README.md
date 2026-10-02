@@ -1,3 +1,3 @@
-# Ajayveer Sandhu — personal site
+# Personal site
 
 my website, www.ajayveersandhu.com
