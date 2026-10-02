@@ -15,7 +15,7 @@ let clip;
 let mobileScrolled = false;
 let audio;
 let volume = 0.5;
-try { const saved = Number(localStorage.getItem('ajay-volume')); if (localStorage.getItem('ajay-volume') !== null && [0, 0.5, 1].includes(saved)) volume = saved; } catch {}
+let volumeBeforeMute = 0.5;
 const $ = (selector) => document.querySelector(selector);
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -36,17 +36,24 @@ function clickSound(level = 1) {
   } catch { /* Visual controls remain usable when audio is unavailable. */ }
 }
 function updateVolume() {
-  const label = volume === 0 ? 'off' : volume === 0.5 ? 'half' : 'full';
-  $('#volume-label').textContent = volume ? `${volume * 100}%` : 'OFF';
-  $('#volume').dataset.level = label;
-  $('#volume').setAttribute('aria-label', `Volume: ${label}. Set to ${volume === 0.5 ? 'full' : volume === 1 ? 'off' : 'half'}`);
+  const percent = Math.round(volume * 100);
+  $('#volume-label').textContent = percent ? `${percent}%` : 'OFF';
+  $('#volume-range').value = percent;
+  $('#volume-range').style.setProperty('--fill', `${percent}%`);
+  $('#volume').dataset.level = volume === 0 ? 'off' : volume < 0.5 ? 'low' : 'high';
+  $('#volume').setAttribute('aria-label', volume ? 'Mute' : 'Unmute');
   if (clip) clip.volume = volume;
 }
 $('#volume').addEventListener('click', () => {
-  volume = volume === 0.5 ? 1 : volume === 1 ? 0 : 0.5;
-  try { localStorage.setItem('ajay-volume', String(volume)); } catch {}
+  if (volume) { volumeBeforeMute = volume; volume = 0; }
+  else { volume = volumeBeforeMute || 0.5; }
   updateVolume(); clickSound();
 });
+$('#volume-range').addEventListener('input', event => {
+  volume = Number(event.target.value) / 100;
+    updateVolume();
+});
+$('#volume-range').addEventListener('change', () => clickSound());
 function cancelTransition() {
   clearTimeout(timer);
   if (clip) { clip.pause(); clip.remove(); clip = null; }
@@ -67,8 +74,6 @@ function showChannel(key) {
   channel.append(badge, visual, caption); channel.hidden = false;
   document.body.classList.add('on');
   $('#experience-list').inert = false;
-  $('#broadcast-status').textContent = key === 'home' ? '' : `CH ${item.number} · ${item.title.toUpperCase()}`;
-  $('#power-hint').textContent = key === 'home' ? '' : 'Press red to come back home.';
 }
 function selectChannel(key, first = false) {
   const interrupted = transitioning;
@@ -90,9 +95,18 @@ function selectChannel(key, first = false) {
     } else showChannel(key);
   }, first ? 550 : 240);
 }
+let surgeTimer;
+function surge(delay) {
+  clearTimeout(surgeTimer);
+  surgeTimer = setTimeout(() => {
+    const work = $('.work');
+    work.classList.remove('surge'); void work.offsetWidth; work.classList.add('surge');
+  }, delay);
+}
 $('#power').addEventListener('click', () => {
   clickSound(powered ? 1 : 0.5);
-  if (!powered) { powered = true; $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
+  surge(powered ? 0 : 700);
+  if (!powered) { powered = true; document.body.classList.add('powered'); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
   else if (current !== 'home') selectChannel('home');
 });
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
@@ -104,4 +118,18 @@ document.querySelectorAll('.experience').forEach(row => row.addEventListener('cl
     window.scrollTo({ top, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
   }
 }));
+function placeSignLight() {
+  const r = $('#name').getBoundingClientRect();
+  const s = document.body.style;
+  s.setProperty('--x0', `${r.left - r.height * 0.4}px`);
+  s.setProperty('--x1', `${r.right + r.height * 0.4}px`);
+  s.setProperty('--y0', `${r.top - r.height * 0.4}px`);
+  s.setProperty('--y1', `${r.bottom + r.height * 0.4}px`);
+  s.setProperty('--fx', `${r.height * 4}px`);
+  s.setProperty('--fy', `${r.height * 2.4}px`);
+}
+placeSignLight();
+addEventListener('resize', placeSignLight);
+addEventListener('scroll', placeSignLight, { passive: true });
+document.fonts?.ready.then(placeSignLight);
 updateVolume();
