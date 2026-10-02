@@ -35,6 +35,117 @@ function clickSound(level = 1) {
     osc.start(); osc.stop(audio.currentTime + 0.07);
   } catch { /* Visual controls remain usable when audio is unavailable. */ }
 }
+// The recording has ~140ms of silence before the click; skip it and keep the snap.
+const RED_BUTTON_OFFSET = 0.135;
+const RED_BUTTON_LENGTH = 0.12;
+// Below 1 plays the click slower and deeper; 0.6 is about nine semitones down.
+const RED_BUTTON_RATE = 0.6;
+let redButtonBuffer;
+try {
+  audio = new (window.AudioContext || window.webkitAudioContext)();
+  fetch('sounds/red-button.flac')
+    .then(response => response.arrayBuffer())
+    .then(data => audio.decodeAudioData(data))
+    .then(buffer => { redButtonBuffer = buffer; })
+    .catch(() => {});
+} catch { /* Falls back to the synthesized click. */ }
+function redButtonSound(level = 1) {
+  if (!redButtonBuffer) return clickSound(level);
+  try {
+    if (audio.state === 'suspended') audio.resume().catch(() => {});
+    if (!volume) return;
+    const now = audio.currentTime;
+    const source = audio.createBufferSource();
+    const gain = audio.createGain();
+    source.buffer = redButtonBuffer;
+    source.playbackRate.value = RED_BUTTON_RATE;
+    const end = now + RED_BUTTON_LENGTH / RED_BUTTON_RATE;
+    gain.gain.setValueAtTime(volume * level, now);
+    gain.gain.setValueAtTime(volume * level, end - 0.04);
+    gain.gain.linearRampToValueAtTime(0, end);
+    source.connect(gain).connect(audio.destination);
+    source.start(now, RED_BUTTON_OFFSET, RED_BUTTON_LENGTH);
+  } catch { clickSound(level); }
+}
+// Background loops swell between a max and min, as fractions of the volume slider.
+const TRAFFIC_MAX = 0.13;
+const TRAFFIC_MIN = 0.07;
+const TRAFFIC_SWELL_SECONDS = 13;
+const AMBIENCE_LEVEL = (TRAFFIC_MAX + TRAFFIC_MIN) / 2;
+// The neon hum swells between these fractions of the average traffic level.
+const HUM_MAX = 0.3;
+const HUM_MIN = 0.15;
+const HUM_SWELL_SECONDS = 8;
+const loops = [
+  { url: 'sounds/city-ambience.flac', max: TRAFFIC_MAX, min: TRAFFIC_MIN, seconds: TRAFFIC_SWELL_SECONDS },
+  { url: 'sounds/neon-hum.flac', max: AMBIENCE_LEVEL * HUM_MAX, min: AMBIENCE_LEVEL * HUM_MIN, seconds: HUM_SWELL_SECONDS },
+];
+loops.forEach(loop => { loop.data = fetch(loop.url).then(response => response.arrayBuffer()).catch(() => null); });
+function loopLevels(loop) {
+  return { center: volume * (loop.max + loop.min) / 2, depth: volume * (loop.max - loop.min) / 2 };
+}
+// The loop is scheduled on load, but most browsers keep audio suspended until a user gesture.
+const unlockTriggers = ['pointerdown', 'touchend', 'click', 'keydown'];
+function unlockAudio() {
+  audio?.resume().then(() => {
+    if (audio.state === 'running') unlockTriggers.forEach(type => removeEventListener(type, unlockAudio));
+  }).catch(() => {});
+}
+async function startLoop(loop) {
+  try {
+    audio.resume().catch(() => {});
+    const data = await loop.data;
+    if (!data) return;
+    const source = audio.createBufferSource();
+    source.buffer = await audio.decodeAudioData(data);
+    source.loop = true;
+    const { center, depth } = loopLevels(loop);
+    loop.gain = audio.createGain();
+    loop.gain.gain.setValueAtTime(0, audio.currentTime);
+    loop.gain.gain.setTargetAtTime(center, audio.currentTime, 0.6);
+    const swell = audio.createOscillator();
+    swell.frequency.value = 1 / loop.seconds;
+    loop.depth = audio.createGain();
+    loop.depth.gain.value = depth;
+    swell.connect(loop.depth).connect(loop.gain.gain);
+    source.connect(loop.gain).connect(audio.destination);
+    source.start(); swell.start();
+  } catch { /* The site works without background audio. */ }
+}
+unlockTriggers.forEach(type => addEventListener(type, unlockAudio));
+loops.forEach(startLoop);
+const STATIC_LEVEL = 0.2;
+let staticBuffer;
+let staticSound;
+fetch('sounds/tv-static.flac')
+  .then(response => response.arrayBuffer())
+  .then(data => audio.decodeAudioData(data))
+  .then(buffer => { staticBuffer = buffer; })
+  .catch(() => {});
+function setStaticSound(on) {
+  if (!staticBuffer) return;
+  const now = audio.currentTime;
+  if (on && !staticSound) {
+    const source = audio.createBufferSource();
+    const gain = audio.createGain();
+    source.buffer = staticBuffer;
+    source.loop = true;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume * STATIC_LEVEL, now + 0.015);
+    source.connect(gain).connect(audio.destination);
+    source.start(now, Math.random() * staticBuffer.duration);
+    staticSound = { source, gain };
+  } else if (!on && staticSound) {
+    const { source, gain } = staticSound;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.04);
+    source.stop(now + 0.05);
+    staticSound = null;
+  }
+}
+new MutationObserver(() => setStaticSound($('#static').classList.contains('active')))
+  .observe($('#static'), { attributes: true, attributeFilter: ['class'] });
 function updateVolume() {
   const percent = Math.round(volume * 100);
   $('#volume-label').textContent = percent ? `${percent}%` : 'OFF';
@@ -43,6 +154,13 @@ function updateVolume() {
   $('#volume').dataset.level = volume === 0 ? 'off' : volume < 0.5 ? 'low' : 'high';
   $('#volume').setAttribute('aria-label', volume ? 'Mute' : 'Unmute');
   if (clip) clip.volume = volume;
+  for (const loop of loops) {
+    if (!loop.gain) continue;
+    const { center, depth } = loopLevels(loop);
+    loop.gain.gain.setTargetAtTime(center, audio.currentTime, 0.05);
+    loop.depth.gain.setTargetAtTime(depth, audio.currentTime, 0.05);
+  }
+  staticSound?.gain.gain.setTargetAtTime(volume * STATIC_LEVEL, audio.currentTime, 0.02);
 }
 $('#volume').addEventListener('click', () => {
   if (volume) { volumeBeforeMute = volume; volume = 0; }
@@ -105,14 +223,14 @@ function surge(delay, first = false) {
   }, delay);
 }
 $('#power').addEventListener('click', () => {
-  clickSound(powered ? 1 : 0.5);
+  redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
   if (!powered) { powered = true; document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
   else if (current !== 'home') selectChannel('home');
 });
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
   if (!powered) return;
-  clickSound(); selectChannel(row.dataset.channel);
+  redButtonSound(); selectChannel(row.dataset.channel);
   if (!mobileScrolled && matchMedia('(max-width: 760px)').matches) {
     mobileScrolled = true;
     const top = row.getBoundingClientRect().top + window.scrollY - 24;
