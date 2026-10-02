@@ -6,14 +6,19 @@ body.on::before { opacity: .025; }
 .cyber-room { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #080a10; }
 /* Before power-on the only light is the neon name; --x0/--x1/--y0/--y1 (lit box) and --fx/--fy (falloff) track it in main.js. */
 /* Two soft-edged bands (across and down) leave a lit rounded box over the name, so light is even along its length. */
-.room-dark { position: absolute; inset: 0; background: #000; transition: opacity 650ms ease;
+.room-dark {
   --mask-x: linear-gradient(90deg, #000 calc(var(--x0) - var(--fx)), #0007 calc(var(--x0) - var(--fx) * .45), #0000 var(--x0), #0000 var(--x1), #0007 calc(var(--x1) + var(--fx) * .45), #000 calc(var(--x1) + var(--fx)));
   --mask-y: linear-gradient(180deg, #000 calc(var(--y0) - var(--fy)), #0007 calc(var(--y0) - var(--fy) * .45), #0000 var(--y0), #0000 var(--y1), #0007 calc(var(--y1) + var(--fy) * .45), #000 calc(var(--y1) + var(--fy)));
   -webkit-mask: var(--mask-x), var(--mask-y); mask: var(--mask-x), var(--mask-y); }
-.on .room-dark { opacity: 0; }
-.room-light { transition: opacity 650ms ease; }
-body:not(.on) .room-light { opacity: 0; }
-body:not(.on) .cyber-room { animation: sign-light 12s ease-in-out infinite; }
+/* main.js nests one .light-layer per experience line, each lit by a soft ellipse (--cx/--cy/--rx/--ry); black survives only where every layer is dark. */
+.light-layer { --cx: -9999px; --cy: -9999px; --rx: 1px; --ry: 1px;
+  --mask-oval: radial-gradient(ellipse var(--rx) var(--ry) at var(--cx) var(--cy), #0000 0%, #0000 50%, #0008 75%, #000 100%);
+  -webkit-mask: var(--mask-oval); mask: var(--mask-oval); }
+.room-dark, .light-layer { position: absolute; inset: 0; }
+.light-layer:empty { background: #000; }
+.room-light { transition: opacity 2.6s ease-in-out; }
+body:not(.powered) .room-light { opacity: 0; }
+body:not(.powered) .cyber-room { animation: sign-light 12s ease-in-out infinite; }
 @keyframes sign-light {
   0%, 12.8%, 14.2%, 15.4%, 16%, 50%, 62.8%, 66%, 67%, 85%, 86%, 100% { filter: brightness(1); }
   6.4%, 56.4% { filter: brightness(1.15); }
@@ -23,10 +28,12 @@ body:not(.on) .cyber-room { animation: sign-light 12s ease-in-out infinite; }
 .room-architecture { position: absolute; left: 50%; bottom: 0; width: max(100%, 100vh * 1280 / 622); aspect-ratio: 1280 / 720; transform: translate(-50%, calc(100% * 98 / 720)); background: url('/robot-alley.gif') 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
 .room-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 29% 55%, #050609b8 0%, #05060973 23%, transparent 55%), radial-gradient(ellipse at 80% 52%, #2596ac0d, transparent 48%), linear-gradient(90deg, #0003, transparent 14%, transparent 85%, #0004); }
 .volume-control, .role, .socials, .location, .work, footer { opacity: 0; visibility: hidden; transition: opacity 650ms ease, visibility 650ms; }
-.on .volume-control, .on .role, .on .socials, .on .location, .on .work, .on footer { opacity: 1; visibility: visible; }
+.on .role, .on .location, .on footer { opacity: 1; visibility: visible; }
+/* The sign's neighbours switch on with the click, before the TV finishes warming up. */
+.powered .volume-control, .powered .socials, .powered .work { opacity: 1; visibility: visible; transition: opacity 500ms ease-out, visibility 0s; }
 .section-label, .experience-list { opacity: 0; transition: opacity 650ms ease; }
 @media (max-width: 760px) {
   .room-architecture { transform: translate(-62%, calc(100% * 98 / 720)); }
   .room-light { background: linear-gradient(90deg, #020408bc, #02040880 55%, #02040845); }
 }
-@media (prefers-reduced-motion: reduce) { .room-dark, .role, .location, .work, footer, body::before { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .role, .socials, .location, .work, footer, body::before { transition: none; } }

@@ -96,17 +96,18 @@ function selectChannel(key, first = false) {
   }, first ? 550 : 240);
 }
 let surgeTimer;
-function surge(delay) {
+function surge(delay, first = false) {
   clearTimeout(surgeTimer);
   surgeTimer = setTimeout(() => {
-    const work = $('.work');
-    work.classList.remove('surge'); void work.offsetWidth; work.classList.add('surge');
+    for (const el of [$('.work'), $('#volume-control')]) {
+      el.classList.remove('surge', 'surge-first'); void el.offsetWidth; el.classList.add(first ? 'surge-first' : 'surge');
+    }
   }, delay);
 }
 $('#power').addEventListener('click', () => {
   clickSound(powered ? 1 : 0.5);
-  surge(powered ? 0 : 700);
-  if (!powered) { powered = true; document.body.classList.add('powered'); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
+  surge(0, !powered);
+  if (!powered) { powered = true; document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
   else if (current !== 'home') selectChannel('home');
 });
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
@@ -118,15 +119,53 @@ document.querySelectorAll('.experience').forEach(row => row.addEventListener('cl
     window.scrollTo({ top, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
   }
 }));
+function setLight(box, el = document.body) {
+  for (const k in box) el.style.setProperty(`--${k}`, `${box[k]}px`);
+}
 function placeSignLight() {
   const r = $('#name').getBoundingClientRect();
-  const s = document.body.style;
-  s.setProperty('--x0', `${r.left - r.height * 0.4}px`);
-  s.setProperty('--x1', `${r.right + r.height * 0.4}px`);
-  s.setProperty('--y0', `${r.top - r.height * 0.4}px`);
-  s.setProperty('--y1', `${r.bottom + r.height * 0.4}px`);
-  s.setProperty('--fx', `${r.height * 4}px`);
-  s.setProperty('--fy', `${r.height * 2.4}px`);
+  setLight({ x0: r.left, x1: r.right, y0: r.top, y1: r.bottom, fx: r.height * 1.3, fy: r.height * 0.8 });
+}
+const lightSources = [$('#volume-control'), $('.section-label'), ...document.querySelectorAll('.experience')];
+const lightLayers = [];
+lightSources.reduce((parent) => {
+  const layer = parent.appendChild(document.createElement('div'));
+  layer.className = 'light-layer';
+  lightLayers.push(layer);
+  return layer;
+}, $('.room-dark'));
+// Each experience line lights up as a thin strip along its text, then grows until the strips merge and cover the screen.
+function spreadLight() {
+  const dark = $('.room-dark');
+  if (reducedMotion.matches) { dark.hidden = true; return; }
+  const duration = 2600;
+  const ease = (t) => (1 - Math.cos(Math.PI * t)) / 2;
+  // Light comes from the words alone: the heading's divider and each row's red button stay dark.
+  const textRect = (el) => {
+    const rects = [...el.querySelectorAll(':scope > :not(.selection)'), el].flatMap((node) => [...node.childNodes])
+      .filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim())
+      .map((n) => { const range = document.createRange(); range.selectNodeContents(n); return range.getBoundingClientRect(); });
+    const left = Math.min(...rects.map((r) => r.left)), right = Math.max(...rects.map((r) => r.right));
+    const top = Math.min(...rects.map((r) => r.top)), bottom = Math.max(...rects.map((r) => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  };
+  const lines = lightSources.map((el) => {
+    const r = el.id === 'volume-control' ? el.getBoundingClientRect() : textRect(el);
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    return { cx, cy, hw: r.width / 2, reach: Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) };
+  });
+  const start = performance.now();
+  const frame = (now) => {
+    const t = (now - start) / duration;
+    if (t >= 1) { dark.hidden = true; return; }
+    const e = ease(t);
+    lines.forEach(({ cx, cy, hw, reach }, i) => {
+      const w = hw + (reach - hw) * e, h = reach * e, fall = reach * 0.8 * e;
+      setLight({ cx, cy, rx: w * 1.4 + fall, ry: h * 1.4 + fall }, lightLayers[i]);
+    });
+    requestAnimationFrame(frame);
+  };
+  frame(start);
 }
 placeSignLight();
 addEventListener('resize', placeSignLight);

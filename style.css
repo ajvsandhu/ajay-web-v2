@@ -43,8 +43,11 @@ button:disabled, [inert] button { cursor: inherit; }
 .name-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 h1 { font-family: 'Neon Goodshine', 'Geist', sans-serif; font-size: 56px; font-weight: 400; line-height: 1.05; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; margin: 0; color: var(--text); text-shadow: var(--glow); }
 h1 { animation: neon 12s ease-in-out infinite; }
-.work.surge :is(.section-label, .year, .company, .title, .dates) { animation: surge 1.4s ease-out; }
+.work.surge :is(.section-label, .year, .company, .title, .dates), .volume-control.surge { animation: surge 1.4s ease-out; }
 @keyframes surge { 0%, 100% { filter: none; } 18% { filter: brightness(1.35) drop-shadow(0 0 4px #c8f7ff80) drop-shadow(0 0 12px #57cbe566); } }
+/* Starts at full glow and decays over the same 2.6s as the light spreading across the room (main.js). */
+.work.surge-first :is(.section-label, .year, .company, .title, .dates), .volume-control.surge-first { animation: surge-first 2.6s linear; }
+@keyframes surge-first { 0%, 12% { filter: brightness(2.1) drop-shadow(0 0 3px #fff) drop-shadow(0 0 12px #c8f7ff) drop-shadow(0 0 30px #57cbe5cc); } 55% { filter: brightness(1.45) drop-shadow(0 0 2px #fffc) drop-shadow(0 0 8px #c8f7ffb3) drop-shadow(0 0 18px #57cbe588); } 100% { filter: none; } }
 @keyframes neon {
   0%, 12.8%, 14.2%, 15.4%, 16%, 50%, 62.8%, 66%, 67%, 85%, 86%, 100% { color: var(--text); text-shadow: var(--glow); }
   6.4%, 56.4% { color: #fff; text-shadow: 0 0 3px #fff, 0 0 10px #fff, 0 0 26px #57cbe5, 0 0 70px #31a2c1b3, 0 0 120px #31a2c166; }
@@ -69,7 +72,7 @@ h1 { animation: neon 12s ease-in-out infinite; }
 .experience:active .selection { transform: translateY(1px); }
 .experience[aria-pressed='true'] .selection { opacity: 1; filter: brightness(1.2) drop-shadow(0 0 4px #ef3822aa); }
 .section-label, .experience-list { opacity: .12; transition: opacity .45s; }
-.on .section-label, .on .experience-list { opacity: 1; }
+.powered .section-label, .powered .experience-list { opacity: 1; transition: opacity 500ms ease-out; }
 /* TV geometry follows the 460 × 680 "Portrait TV player" Figma frame; --u is one Figma pixel. */
 .television-area { position: relative; width: 100%; max-width: 260px; justify-self: end; container-type: inline-size; }
 /* --px is one art pixel (matches the 16-px power button sprite); outlines and corner steps snap to it. */
