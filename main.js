@@ -84,13 +84,6 @@ loops.forEach(loop => { loop.data = fetch(loop.url).then(response => response.ar
 function loopLevels(loop) {
   return { center: volume * (loop.max + loop.min) / 2, depth: volume * (loop.max - loop.min) / 2 };
 }
-// The loop is scheduled on load, but most browsers keep audio suspended until a user gesture.
-const unlockTriggers = ['pointerdown', 'touchend', 'click', 'keydown'];
-function unlockAudio() {
-  audio?.resume().then(() => {
-    if (audio.state === 'running') unlockTriggers.forEach(type => removeEventListener(type, unlockAudio));
-  }).catch(() => {});
-}
 async function startLoop(loop) {
   try {
     audio.resume().catch(() => {});
@@ -112,8 +105,6 @@ async function startLoop(loop) {
     source.start(); swell.start();
   } catch { /* The site works without background audio. */ }
 }
-unlockTriggers.forEach(type => addEventListener(type, unlockAudio));
-loops.forEach(startLoop);
 const STATIC_LEVEL = 0.2;
 let staticBuffer;
 let staticSound;
@@ -225,7 +216,7 @@ function surge(delay, first = false) {
 $('#power').addEventListener('click', () => {
   redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
-  if (!powered) { powered = true; document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
+  if (!powered) { powered = true; loops.forEach(startLoop); document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
   else if (current !== 'home') selectChannel('home');
 });
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
