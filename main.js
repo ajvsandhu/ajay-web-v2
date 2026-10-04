@@ -6,7 +6,25 @@ const content = {
   uwaterloo: { number: '03', title: 'UWaterloo', caption: 'I study Computational Mathematics at the University of Waterloo.', image: null, placeholder: 'Campus · image to come', type: 'project' },
   zocratic: { number: '04', title: 'ZocraticMMA', caption: 'I built a UFC analytics platform that 50+ people use to compare fighters.', image: null, placeholder: 'Fighter comparison · image to come', type: 'project' },
 };
-const returnClip = ''; // Add a local 1–2 second video URL when selected.
+// Each red button press tunes through one of these "other channels" before landing on its own.
+const clips = ['12-51', 'leon-ko', 'prince-solo', 'shiiit', 'spiderman-2-train', 'trex-roar', 'uncharted-plane'].map(name => `clips/${name}.mp4`);
+// The screen crops each clip's sides; these shift a clip's framing so its subject stays in view.
+const clipFraming = { 'clips/trex-roar.mp4': '100% 50%' };
+// A clip can't air again until this many other clips have aired; must stay below clips.length.
+const CLIP_COOLDOWN = 5;
+const recentClips = [];
+let nextClip;
+function preloadClip() {
+  const choices = clips.filter(src => !recentClips.includes(src));
+  const src = choices[Math.floor(Math.random() * choices.length)];
+  recentClips.push(src);
+  if (recentClips.length > CLIP_COOLDOWN) recentClips.shift();
+  nextClip = document.createElement('video');
+  nextClip.src = src; nextClip.preload = 'auto'; nextClip.playsInline = true; nextClip.className = 'return-clip';
+  nextClip.style.objectPosition = clipFraming[src] || '';
+  nextClip.load();
+}
+preloadClip();
 let powered = false;
 let current = 'home';
 let transitioning = false;
@@ -22,7 +40,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function clickSound(level = 1) {
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (audio.state === 'suspended') audio.resume().catch(() => {});
+    if (powered && audio.state === 'suspended') audio.resume().catch(() => {});
     if (!volume) return;
     const osc = audio.createOscillator();
     const gain = audio.createGain();
@@ -52,7 +70,7 @@ try {
 function redButtonSound(level = 1) {
   if (!redButtonBuffer) return clickSound(level);
   try {
-    if (audio.state === 'suspended') audio.resume().catch(() => {});
+    if (powered && audio.state === 'suspended') audio.resume().catch(() => {});
     if (!volume) return;
     const now = audio.currentTime;
     const source = audio.createBufferSource();
@@ -84,16 +102,13 @@ loops.forEach(loop => { loop.data = fetch(loop.url).then(response => response.ar
 function loopLevels(loop) {
   return { center: volume * (loop.max + loop.min) / 2, depth: volume * (loop.max - loop.min) / 2 };
 }
-// The loop is scheduled on load, but most browsers keep audio suspended until a user gesture.
-const unlockTriggers = ['pointerdown', 'touchend', 'click', 'keydown'];
-function unlockAudio() {
-  audio?.resume().then(() => {
-    if (audio.state === 'running') unlockTriggers.forEach(type => removeEventListener(type, unlockAudio));
-  }).catch(() => {});
-}
+// The loops are scheduled on load, but the site stays silent until the TV is powered on.
+try {
+  audio.suspend().catch(() => {});
+  audio.addEventListener('statechange', () => { if (!powered && audio.state === 'running') audio.suspend().catch(() => {}); });
+} catch { /* No audio support. */ }
 async function startLoop(loop) {
   try {
-    audio.resume().catch(() => {});
     const data = await loop.data;
     if (!data) return;
     const source = audio.createBufferSource();
@@ -112,7 +127,6 @@ async function startLoop(loop) {
     source.start(); swell.start();
   } catch { /* The site works without background audio. */ }
 }
-unlockTriggers.forEach(type => addEventListener(type, unlockAudio));
 loops.forEach(startLoop);
 const STATIC_LEVEL = 0.2;
 let staticBuffer;
@@ -172,11 +186,16 @@ $('#volume-range').addEventListener('input', event => {
     updateVolume();
 });
 $('#volume-range').addEventListener('change', () => clickSound());
+// Nothing on the page can be pressed, hovered or focused while the TV is flipping channels.
+function lockControls(locked) {
+  document.querySelectorAll('button, a, input').forEach(el => { el.inert = locked; });
+}
 function cancelTransition() {
   clearTimeout(timer);
   if (clip) { clip.pause(); clip.remove(); clip = null; }
   $('#static').classList.remove('active');
   transitioning = false;
+  lockControls(false);
 }
 function showChannel(key) {
   cancelTransition();
@@ -193,24 +212,25 @@ function showChannel(key) {
   document.body.classList.add('on');
   $('#experience-list').inert = false;
 }
-function selectChannel(key, first = false) {
+function selectChannel(key, { first = false, withClip = false } = {}) {
   const interrupted = transitioning;
-  const returning = key === 'home' && current !== 'home';
   cancelTransition(); current = key;
   document.querySelectorAll('.experience').forEach(row => row.setAttribute('aria-pressed', String(row.dataset.channel === key)));
   if (interrupted || reducedMotion.matches) { showChannel(key); return; }
   transitioning = true;
+  lockControls(true);
   $('#off-screen').hidden = true;
   $('#static').classList.add('active');
   timer = setTimeout(() => {
-    if (returning && returnClip && !first) {
-      $('#static').classList.remove('active');
-      clip = document.createElement('video'); clip.src = returnClip; clip.playsInline = true; clip.volume = volume; clip.className = 'return-clip';
-      $('#glass').append(clip);
-      const finish = () => { if (!clip) return; clip.pause(); clip.remove(); clip = null; $('#static').classList.add('active'); clearTimeout(timer); timer = setTimeout(() => showChannel(key), 180); };
-      clip.onended = finish; clip.onerror = finish; clip.play().catch(finish);
-      timer = setTimeout(finish, 2000);
-    } else showChannel(key);
+    if (!withClip) { showChannel(key); return; }
+    $('#static').classList.remove('active');
+    clip = nextClip; clip.volume = volume;
+    preloadClip();
+    $('#glass').append(clip);
+    const finish = () => { if (!clip) return; clip.pause(); clip.remove(); clip = null; $('#static').classList.add('active'); clearTimeout(timer); timer = setTimeout(() => showChannel(key), 240); };
+    clip.onended = finish; clip.onerror = finish; clip.play().catch(finish);
+    // Safety net in case a clip stalls; every clip is under 3 seconds.
+    timer = setTimeout(finish, 4000);
   }, first ? 550 : 240);
 }
 let surgeTimer;
@@ -225,8 +245,8 @@ function surge(delay, first = false) {
 $('#power').addEventListener('click', () => {
   redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
-  if (!powered) { powered = true; document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', true); }
-  else if (current !== 'home') selectChannel('home');
+  if (!powered) { powered = true; audio?.resume().catch(() => {}); document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); }
+  else selectChannel('home', { withClip: true });
 });
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
   if (!powered) return;
