@@ -1,13 +1,13 @@
 // Content lives here so real images and contact details can be added independently.
 const content = {
   home: { number: '00', title: 'Ajayveer Sandhu', caption: 'Computational Mathematics · University of Waterloo', image: null, placeholder: 'Your portrait here', type: 'portrait' },
-  fincapes: { number: '01', title: 'Fincapes', caption: 'I built models researchers use to study geothermal energy in Indonesia.', image: null, placeholder: 'Geothermal research · image to come', type: 'project' },
-  statcan: { number: '02', title: 'Statistics Canada', caption: '', image: null, placeholder: 'T4 data pipelines · image to come', type: 'project' },
-  uwaterloo: { number: '03', title: 'UWaterloo', caption: 'I study Computational Mathematics at the University of Waterloo.', image: null, placeholder: 'Campus · image to come', type: 'project' },
+  fincapes: { number: '01', title: 'Fincapes', caption: 'Building Models to find Problems and Implement Solutions for Geothermal Energy', image: 'images/fincapes.jpg', link: 'https://fincapesproject.com/', placeholder: 'Geothermal research · image to come', type: 'project' },
+  statcan: { number: '02', title: 'Statistics Canada', label: 'StatCan', caption: '', image: 'images/statcan.jpg', link: 'https://www.statcan.gc.ca/', placeholder: 'T4 data pipelines · image to come', type: 'project' },
+  uwaterloo: { number: '03', title: 'UWaterloo', label: 'University of Waterloo', caption: 'Modeling, Programming, Statistics, Forecasting, Research. Name it, I can do it or I can learn how.', image: 'images/uwaterloo.jpg', link: 'https://uwaterloo.ca/computational-mathematics/', placeholder: 'Campus · image to come', type: 'project' },
   zocratic: { number: '04', title: 'ZocraticMMA', caption: 'I built a UFC analytics platform that 50+ people use to compare fighters.', image: null, placeholder: 'Fighter comparison · image to come', type: 'project' },
 };
 // Each red button press tunes through one of these "other channels" before landing on its own.
-const clips = ['12-51', 'leon-ko', 'prince-solo', 'shiiit', 'spiderman-2-train', 'trex-roar', 'uncharted-plane'].map(name => `clips/${name}.mp4`);
+const clips = ['12-51', 'jim-where-did-you-go', 'leon-ko', 'prince-solo', 'shiiit', 'spiderman-2-train', 'trex-roar', 'uncharted-plane', 'winner-takes-it-all'].map(name => `clips/${name}.mp4`);
 // The screen crops each clip's sides; these shift a clip's framing so its subject stays in view.
 const clipFraming = { 'clips/trex-roar.mp4': '100% 50%' };
 // A clip can't air again until this many other clips have aired; must stay below clips.length.
@@ -185,9 +185,32 @@ $('#volume-range').addEventListener('input', event => {
     updateVolume();
 });
 $('#volume-range').addEventListener('change', () => clickSound());
-// Nothing on the page can be pressed, hovered or focused while the TV is flipping channels.
+// Controls still show hover while the TV is flipping channels, but nothing can be pressed.
 function lockControls(locked) {
-  document.querySelectorAll('button, a, input').forEach(el => { el.inert = locked; });
+  document.body.classList.toggle('tuning', locked);
+}
+// Space repeats the last button pressed, wherever focus is.
+let lastPressed = null;
+document.addEventListener('click', event => {
+  const button = event.target.closest?.('button');
+  if (button) lastPressed = button;
+});
+for (const type of ['keydown', 'keyup']) {
+  document.addEventListener(type, event => {
+    if (event.code !== 'Space' || event.target.closest?.('input, textarea, select, [contenteditable]')) return;
+    const focused = document.activeElement?.closest?.('button');
+    const target = focused || lastPressed;
+    if (!target) return;
+    event.preventDefault();
+    if (type === 'keydown' && !event.repeat) target.click();
+  }, true);
+}
+for (const type of ['click', 'pointerdown', 'keydown']) {
+  document.addEventListener(type, event => {
+    if (!document.body.classList.contains('tuning') || !event.target.closest?.('button, a, input')) return;
+    if (type === 'keydown' && event.key === 'Tab') return;
+    event.preventDefault(); event.stopImmediatePropagation();
+  }, true);
 }
 function cancelTransition() {
   clearTimeout(timer);
@@ -202,12 +225,18 @@ function showChannel(key) {
   const item = content[key];
   const channel = $('#channel');
   channel.replaceChildren();
-  const badge = document.createElement('div'); badge.className = 'channel-id'; badge.textContent = `CH ${item.number} / ${key === 'home' ? 'ABOUT ME' : item.title.toUpperCase()}`;
-  const visual = document.createElement('div'); visual.className = `channel-visual ${item.type}`;
+  const visual = document.createElement(item.link ? 'a' : 'div'); visual.className = `channel-visual ${item.type}`; visual.dataset.channel = key;
+  if (item.link) {
+    visual.href = item.link; visual.target = '_blank'; visual.rel = 'noopener'; visual.setAttribute('aria-label', `Visit ${item.title}`);
+    const arrow = document.createElement('span'); arrow.className = 'channel-link-arrow'; arrow.setAttribute('aria-hidden', 'true');
+    arrow.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M4.5 11.5l7-7M5.5 4.5h6v6"/></svg>';
+    visual.append(arrow);
+  }
   if (item.image) { const img = document.createElement('img'); img.src = item.image; img.alt = item.title; visual.append(img); }
   else { const mark = document.createElement('span'); mark.className = 'placeholder-mark'; mark.textContent = key === 'home' ? 'AS' : item.number; const label = document.createElement('span'); label.className = 'placeholder-label'; label.textContent = item.placeholder; visual.append(mark, label); }
   const caption = document.createElement('p'); caption.className = 'channel-caption'; caption.textContent = item.caption;
-  channel.append(badge, visual, caption); channel.hidden = false;
+  if (key !== 'home') { const label = document.createElement('div'); label.className = 'channel-id'; label.textContent = (item.label || item.title).toUpperCase(); channel.append(label); }
+  channel.append(visual, caption); channel.hidden = false;
   document.body.classList.add('on');
   $('#experience-list').inert = false;
 }
@@ -244,7 +273,7 @@ function surge(delay, first = false) {
 $('#power').addEventListener('click', () => {
   redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
-  if (!powered) { powered = true; audio?.resume().catch(() => {}); loops.forEach(startLoop); document.body.classList.add('powered'); spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); }
+  if (!powered) { powered = true; audio?.resume().catch(() => {}); loops.forEach(startLoop); document.body.classList.add('powered'); $('#experience-list').inert = false; spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); }
   else selectChannel('home', { withClip: true });
 });
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
@@ -304,6 +333,45 @@ function spreadLight() {
   };
   frame(start);
 }
+const nameTag = $('#name-tag');
+const tagLines = [...nameTag.children].map(line => [...line.querySelectorAll('[data-text]')]);
+const glyphs = [...'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗᛚᛜᛞᛟ⏃⏚☊⎅⟒⎎☌⊑⟟⟊☍⌰⋔⋏⍜⌿⍀⌇⏁⎍⎐⍙⌖⊬⋉ΔΘΞΨΩЖЯѦѪ'];
+const glyphColors = ['#4f9dff', '#4f9dff', '#57cbe5', '#57cbe5', '#57cbe5', '#9eeeff', '#9eeeff', '#eaffff', '#ff5a4e', '#ff9a3c', '#a77bff'];
+const pick = list => list[Math.floor(Math.random() * list.length)];
+let decodeTimer = 0;
+function renderNameTag(revealed) {
+  let done = true;
+  for (const segments of tagLines) {
+    let remaining = revealed;
+    for (const el of segments) {
+      const text = el.dataset.text;
+      const shown = Math.max(0, Math.min(text.length, remaining));
+      remaining -= text.length;
+      if (shown < text.length) done = false;
+      let html = text.slice(0, shown);
+      for (let i = shown; i < text.length; i++) html += `<span class="glitch" style="color:${pick(glyphColors)}">${pick(glyphs)}</span>`;
+      el.innerHTML = html;
+      const dot = el.nextElementSibling?.classList.contains('live-dot') && el.nextElementSibling;
+      if (dot) dot.style.visibility = shown < text.length ? 'hidden' : '';
+    }
+  }
+  return done;
+}
+function decodeNameTag() {
+  clearInterval(decodeTimer);
+  const start = performance.now();
+  renderNameTag(0);
+  decodeTimer = setInterval(() => { if (renderNameTag(Math.floor((performance.now() - start) / 120))) clearInterval(decodeTimer); }, 50);
+}
+$('#name').addEventListener('pointermove', event => {
+  if (!powered || event.pointerType !== 'mouse') return;
+  const x = Math.min(event.clientX + 18, innerWidth - nameTag.offsetWidth - 8);
+  const y = Math.min(event.clientY + 22, innerHeight - nameTag.offsetHeight - 8);
+  nameTag.style.transform = `translate(${x}px, ${y}px)`;
+  if (!nameTag.classList.contains('visible')) decodeNameTag();
+  nameTag.classList.add('visible');
+});
+$('#name').addEventListener('pointerleave', () => { clearInterval(decodeTimer); nameTag.classList.remove('visible'); });
 placeSignLight();
 addEventListener('resize', placeSignLight);
 addEventListener('scroll', placeSignLight, { passive: true });
