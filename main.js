@@ -1,6 +1,6 @@
 // Content lives here so real images and contact details can be added independently.
 const content = {
-  home: { number: '00', title: 'Ajayveer Sandhu', caption: 'Computational Mathematics · University of Waterloo', image: null, placeholder: 'Your portrait here', type: 'portrait' },
+  home: { number: '00', title: 'Ajayveer Sandhu', caption: 'Computational Mathematics · University of Waterloo', image: 'images/ottawa.jpg', placeholder: 'Your portrait here', type: 'portrait' },
   fincapes: { number: '01', title: 'Fincapes', caption: 'Building Models to find Problems and Implement Solutions for Geothermal Energy', image: 'images/fincapes.jpg', link: 'https://fincapesproject.com/', placeholder: 'Geothermal research · image to come', type: 'project' },
   statcan: { number: '02', title: 'Statistics Canada', label: 'StatCan', caption: '', image: 'images/statcan.jpg', link: 'https://www.statcan.gc.ca/', placeholder: 'T4 data pipelines · image to come', type: 'project' },
   uwaterloo: { number: '03', title: 'UWaterloo', label: 'University of Waterloo', caption: 'Modeling, Programming, Statistics, Forecasting, Research. Name it, I can do it or I can learn how.', image: 'images/uwaterloo.jpg', link: 'https://uwaterloo.ca/computational-mathematics/', placeholder: 'Campus · image to come', type: 'project' },
