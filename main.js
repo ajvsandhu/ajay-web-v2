@@ -39,7 +39,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function clickSound(level = 1) {
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (powered && audio.state === 'suspended') audio.resume().catch(() => {});
+    if (powered && audio.state !== 'running') audio.resume().catch(() => {});
     if (!volume) return;
     const osc = audio.createOscillator();
     const gain = audio.createGain();
@@ -59,6 +59,8 @@ const RED_BUTTON_LENGTH = 0.12;
 const RED_BUTTON_RATE = 0.6;
 let redButtonBuffer;
 try {
+  // iOS mutes Web Audio (but not the video clips) when the ringer switch is on silent unless the page asks for playback.
+  if (navigator.audioSession) navigator.audioSession.type = 'playback';
   audio = new (window.AudioContext || window.webkitAudioContext)();
   fetch('sounds/red-button.flac')
     .then(response => response.arrayBuffer())
@@ -69,7 +71,7 @@ try {
 function redButtonSound(level = 1) {
   if (!redButtonBuffer) return clickSound(level);
   try {
-    if (powered && audio.state === 'suspended') audio.resume().catch(() => {});
+    if (powered && audio.state !== 'running') audio.resume().catch(() => {});
     if (!volume) return;
     const now = audio.currentTime;
     const source = audio.createBufferSource();
