@@ -1,10 +1,10 @@
 // Content lives here so real images and contact details can be added independently.
 const content = {
   home: { number: '00', title: 'Ajayveer Sandhu', caption: 'Computational Mathematics · University of Waterloo', image: 'images/ottawa.jpg', placeholder: 'Your portrait here', type: 'portrait' },
-  fincapes: { number: '01', title: 'Fincapes', caption: 'Building Models to find Problems and Implement Solutions for Geothermal Energy', image: 'images/fincapes.jpg', link: 'https://fincapesproject.com/', placeholder: 'Geothermal research · image to come', type: 'project' },
-  statcan: { number: '02', title: 'Statistics Canada', label: 'StatCan', caption: '', image: 'images/statcan.jpg', link: 'https://www.statcan.gc.ca/', placeholder: 'T4 data pipelines · image to come', type: 'project' },
-  uwaterloo: { number: '03', title: 'UWaterloo', label: 'University of Waterloo', caption: 'Modeling, Programming, Statistics, Forecasting, Research. Name it, I can do it or I can learn how.', image: 'images/uwaterloo.jpg', link: 'https://uwaterloo.ca/computational-mathematics/', placeholder: 'Campus · image to come', type: 'project' },
-  zocratic: { number: '04', title: 'ZocraticMMA', caption: 'I built a UFC analytics platform that 50+ people use to compare fighters.', image: null, placeholder: 'Fighter comparison · image to come', type: 'project' },
+  fincapes: { number: '01', title: 'Fincapes', caption: 'Building Models to Find Problems and Implement Solutions for Geothermal Energy', image: 'images/fincapes.jpg', link: 'https://fincapesproject.com/', placeholder: 'Geothermal research · image to come', type: 'project' },
+  statcan: { number: '02', title: 'Statistics Canada', caption: 'Engineering the Data Pipelines Analysts Rely On to Inform Canadians Nationwide', image: 'images/statcan.jpg', link: 'https://www.statcan.gc.ca/', placeholder: 'T4 data pipelines · image to come', type: 'project' },
+  uwaterloo: { number: '03', title: 'University of Waterloo', caption: 'Studying the Art of Modeling, Programming, Statistics, Forecasting and Research', image: 'images/uwaterloo.jpg', link: 'https://uwaterloo.ca/computational-mathematics/', placeholder: 'Campus · image to come', type: 'project' },
+  zocratic: { number: '04', title: 'ZocraticMMA', caption: 'A UFC Analytics Platform Connecting Fans Nationwide for a Smarter View of the Sport', image: 'images/zocratic.jpg', link: 'https://www.zocraticmma.com/', placeholder: 'Fighter comparison · image to come', type: 'project' },
 };
 // Each red button press tunes through one of these "other channels" before landing on its own.
 const clips = ['12-51', 'jim-where-did-you-go', 'leon-ko', 'prince-solo', 'shiiit', 'spiderman-2-train', 'trex-roar', 'uncharted-plane', 'winner-takes-it-all'].map(name => `clips/${name}.mp4`);
@@ -30,7 +30,6 @@ let current = 'home';
 let transitioning = false;
 let timer;
 let clip;
-let mobileScrolled = false;
 let audio;
 let volume = 0.5;
 let volumeBeforeMute = 0.5;
@@ -165,7 +164,7 @@ function updateVolume() {
   $('#volume-range').value = percent;
   $('#volume-range').style.setProperty('--fill', `${percent}%`);
   $('#volume').dataset.level = volume === 0 ? 'off' : volume < 0.5 ? 'low' : 'high';
-  $('#volume').setAttribute('aria-label', volume ? 'Mute' : 'Unmute');
+  $('#volume').setAttribute('aria-label', matchMedia('(max-width: 760px)').matches ? `Volume ${percent ? `${percent}%` : 'off'}` : volume ? 'Mute' : 'Unmute');
   if (clip) clip.volume = volume;
   for (const loop of loops) {
     if (!loop.gain) continue;
@@ -176,7 +175,8 @@ function updateVolume() {
   staticSound?.gain.gain.setTargetAtTime(volume * STATIC_LEVEL, audio.currentTime, 0.02);
 }
 $('#volume').addEventListener('click', () => {
-  if (volume) { volumeBeforeMute = volume; volume = 0; }
+  if (matchMedia('(max-width: 760px)').matches) volume = (Math.round(volume * 4) + 1) % 5 / 4;
+  else if (volume) { volumeBeforeMute = volume; volume = 0; }
   else { volume = volumeBeforeMute || 0.5; }
   updateVolume(); clickSound();
 });
@@ -207,7 +207,7 @@ for (const type of ['keydown', 'keyup']) {
 }
 for (const type of ['click', 'pointerdown', 'keydown']) {
   document.addEventListener(type, event => {
-    if (!document.body.classList.contains('tuning') || !event.target.closest?.('button, a, input')) return;
+    if (!document.body.classList.contains('tuning') || !event.target.closest?.('button, a, input') || event.target.closest('#volume-control')) return;
     if (type === 'keydown' && event.key === 'Tab') return;
     event.preventDefault(); event.stopImmediatePropagation();
   }, true);
@@ -273,17 +273,26 @@ function surge(delay, first = false) {
 $('#power').addEventListener('click', () => {
   redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
-  if (!powered) { powered = true; audio?.resume().catch(() => {}); loops.forEach(startLoop); document.body.classList.add('powered'); $('#experience-list').inert = false; spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); }
+  if (!powered) { powered = true; audio?.resume().catch(() => {}); loops.forEach(startLoop); document.body.classList.add('powered'); $('#experience-list').inert = false; spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); revealExperience(); }
   else selectChannel('home', { withClip: true });
 });
+// On phones the list sits below the TV; bring as much of it into view as possible without pushing the TV off the top.
+function revealExperience() {
+  if (!matchMedia('(max-width: 760px)').matches) return;
+  const tvTop = $('#television').getBoundingClientRect().top + window.scrollY - 16;
+  const listEnd = $('.work').getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 24;
+  const top = Math.max(window.scrollY, Math.min(tvTop, listEnd));
+  window.scrollTo({ top, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+}
+function revealTelevision() {
+  if (!matchMedia('(max-width: 760px)').matches) return;
+  const name = $('.name-row').getBoundingClientRect();
+  if (name.top >= 0 && $('#television').getBoundingClientRect().bottom <= window.innerHeight) return;
+  window.scrollTo({ top: name.top + window.scrollY - 16, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+}
 document.querySelectorAll('.experience').forEach(row => row.addEventListener('click', () => {
   if (!powered) return;
-  redButtonSound(); selectChannel(row.dataset.channel);
-  if (!mobileScrolled && matchMedia('(max-width: 760px)').matches) {
-    mobileScrolled = true;
-    const top = row.getBoundingClientRect().top + window.scrollY - 24;
-    window.scrollTo({ top, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
-  }
+  redButtonSound(); selectChannel(row.dataset.channel); revealTelevision();
 }));
 function setLight(box, el = document.body) {
   for (const k in box) el.style.setProperty(`--${k}`, `${box[k]}px`);
@@ -377,3 +386,10 @@ addEventListener('resize', placeSignLight);
 addEventListener('scroll', placeSignLight, { passive: true });
 document.fonts?.ready.then(placeSignLight);
 updateVolume();
+// The tab icon flashes on the power button's rhythm for as long as the page is open.
+// Browsers won't animate a favicon, so the lit and dim frames are swapped by hand.
+let faviconLit = false;
+if (!reducedMotion.matches) setInterval(() => {
+  faviconLit = !faviconLit;
+  $('#favicon').href = faviconLit ? '/favicon-lit.svg' : '/favicon-dim.svg';
+}, 550);
