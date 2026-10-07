@@ -172,8 +172,16 @@ function updateVolume() {
   $('#volume-label').textContent = percent ? `${percent}%` : 'OFF';
   $('#volume-range').value = percent;
   $('#volume-range').style.setProperty('--fill', `${percent}%`);
-  $('#volume').dataset.level = volume === 0 ? 'off' : volume < 0.5 ? 'low' : 'high';
-  $('#volume').setAttribute('aria-label', matchMedia('(max-width: 760px)').matches ? `Volume ${percent ? `${percent}%` : 'off'}` : volume ? 'Mute' : 'Unmute');
+  const level = volume === 0 ? 'off' : volume < 0.5 ? 'low' : 'high';
+  $('#volume').dataset.level = level;
+  $('#volume').setAttribute('aria-label', volume ? 'Mute' : 'Unmute');
+  document.querySelectorAll('.mute-toggle').forEach(button => {
+    button.dataset.level = level;
+    button.setAttribute('aria-pressed', String(!volume));
+    const label = button.querySelector('span');
+    if (label) label.textContent = volume ? 'Sound' : 'Muted';
+    else button.setAttribute('aria-label', volume ? 'Mute' : 'Unmute');
+  });
   if (clip) clip.volume = volume;
   for (const loop of loops) {
     if (!loop.gain) continue;
@@ -183,12 +191,14 @@ function updateVolume() {
   }
   staticSound?.gain.gain.setTargetAtTime(volume * STATIC_LEVEL, audio.currentTime, 0.02);
 }
-$('#volume').addEventListener('click', () => {
-  if (matchMedia('(max-width: 760px)').matches) volume = (Math.round(volume * 4) + 1) % 5 / 4;
-  else if (volume) { volumeBeforeMute = volume; volume = 0; }
+function toggleMute() {
+  if (volume) { volumeBeforeMute = volume; volume = 0; }
   else { volume = volumeBeforeMute || 0.5; }
   updateVolume(); clickSound();
-});
+}
+$('#volume').addEventListener('click', toggleMute);
+// Phones hide the volume box (hardware buttons set the level) and get a mute button among the links instead.
+document.addEventListener('click', event => { if (event.target.closest?.('.mute-toggle')) toggleMute(); });
 $('#volume-range').addEventListener('input', event => {
   volume = Number(event.target.value) / 100;
     updateVolume();
@@ -216,7 +226,7 @@ for (const type of ['keydown', 'keyup']) {
 }
 for (const type of ['click', 'pointerdown', 'keydown']) {
   document.addEventListener(type, event => {
-    if (!document.body.classList.contains('tuning') || !event.target.closest?.('button, a, input') || event.target.closest('#volume-control')) return;
+    if (!document.body.classList.contains('tuning') || !event.target.closest?.('button, a, input') || event.target.closest('#volume-control, .mute-toggle')) return;
     if (type === 'keydown' && event.key === 'Tab') return;
     event.preventDefault(); event.stopImmediatePropagation();
   }, true);
@@ -407,10 +417,15 @@ $('#name').addEventListener('pointermove', event => {
 });
 $('#name').addEventListener('pointerleave', () => { clearInterval(decodeTimer); nameTag.classList.remove('visible'); });
 // On phones the name row scrolls away, so its links are repeated in a bar pinned to the bottom of the screen.
+const muteToggle = document.createElement('button');
+muteToggle.type = 'button';
+muteToggle.className = 'social mute-toggle';
+muteToggle.innerHTML = $('#volume svg').outerHTML;
+$('.socials').append(muteToggle);
 const contactBar = $('#contact-bar');
 for (const link of $('.socials').children) {
   const copy = link.cloneNode(true);
-  copy.className = 'contact-link';
+  copy.className = link.classList.contains('mute-toggle') ? 'contact-link mute-toggle' : 'contact-link';
   copy.removeAttribute('aria-label');
   const label = document.createElement('span');
   label.textContent = link.getAttribute('aria-label');
