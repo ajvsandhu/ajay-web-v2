@@ -182,7 +182,8 @@ function updateVolume() {
     if (label) label.textContent = volume ? 'Sound' : 'Muted';
     else button.setAttribute('aria-label', volume ? 'Mute' : 'Unmute');
   });
-  if (clip) clip.volume = volume;
+  // iOS ignores a video's volume, so muting has to go through .muted.
+  if (clip) { clip.volume = volume; clip.muted = !volume; }
   for (const loop of loops) {
     if (!loop.gain) continue;
     const { center, depth } = loopLevels(loop);
@@ -284,7 +285,7 @@ function selectChannel(key, { first = false, withClip = false } = {}) {
   timer = setTimeout(() => {
     if (!withClip) { showChannel(key); return; }
     $('#static').classList.remove('active');
-    clip = nextClip; clip.volume = volume;
+    clip = nextClip; clip.volume = volume; clip.muted = !volume;
     preloadClip();
     $('#glass').append(clip);
     const finish = () => { if (!clip) return; clip.pause(); clip.remove(); clip = null; $('#static').classList.add('active'); clearTimeout(timer); timer = setTimeout(() => showChannel(key), 240); };
