@@ -41,7 +41,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 function clickSound(level = 1) {
   try {
     audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (powered && audio.state !== 'running') audio.resume().catch(() => {});
+    if (powered && volume && audio.state !== 'running') audio.resume().catch(() => {});
     if (!volume) return;
     const osc = audio.createOscillator();
     const gain = audio.createGain();
@@ -61,7 +61,8 @@ const RED_BUTTON_LENGTH = 0.12;
 const RED_BUTTON_RATE = 0.6;
 let redButtonBuffer;
 try {
-  // iOS mutes Web Audio (but not the video clips) when the ringer switch is on silent unless the page asks for playback.
+  // iOS mutes Web Audio (but not the video clips) when the ringer switch is on silent unless the page asks for playback;
+  // updateVolume drops back to 'ambient' while muted so the site doesn't pause the visitor's own music.
   if (navigator.audioSession) navigator.audioSession.type = 'playback';
   audio = new (window.AudioContext || window.webkitAudioContext)();
   fetch('sounds/red-button.flac')
@@ -73,7 +74,7 @@ try {
 function redButtonSound(level = 1) {
   if (!redButtonBuffer) return clickSound(level);
   try {
-    if (powered && audio.state !== 'running') audio.resume().catch(() => {});
+    if (powered && volume && audio.state !== 'running') audio.resume().catch(() => {});
     if (!volume) return;
     const now = audio.currentTime;
     const source = audio.createBufferSource();
@@ -113,7 +114,7 @@ try {
 // Switching tabs, switching apps or locking the phone hides the page; sound pauses until it's visible again.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { audio?.suspend().catch(() => {}); clip?.pause(); }
-  else if (powered) { audio?.resume().catch(() => {}); clip?.play().catch(() => {}); }
+  else if (powered) { if (volume) audio?.resume().catch(() => {}); clip?.play().catch(() => {}); }
 });
 async function startLoop(loop) {
   try {
@@ -184,6 +185,8 @@ function updateVolume() {
   });
   // iOS ignores a video's volume, so muting has to go through .muted.
   if (clip) { clip.volume = volume; clip.muted = !volume; }
+  if (navigator.audioSession) navigator.audioSession.type = volume ? 'playback' : 'ambient';
+  if (audio && powered && !document.hidden) (volume ? audio.resume() : audio.suspend()).catch(() => {});
   for (const loop of loops) {
     if (!loop.gain) continue;
     const { center, depth } = loopLevels(loop);
@@ -309,7 +312,7 @@ setTimeout(() => { if (!powered) document.body.classList.add('hinting'); }, POWE
 $('#power').addEventListener('click', () => {
   redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
-  if (!powered) { powered = true; audio?.resume().catch(() => {}); loops.forEach(startLoop); document.body.classList.add('powered'); $('#experience-list').inert = false; spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); revealExperience(); }
+  if (!powered) { powered = true; if (volume) audio?.resume().catch(() => {}); loops.forEach(startLoop); document.body.classList.add('powered'); $('#experience-list').inert = false; spreadLight(); $('#power').setAttribute('aria-label', 'Return to portrait'); selectChannel('home', { first: true, withClip: true }); revealExperience(); }
   else selectChannel('home', { withClip: true });
 });
 // On phones the list sits below the TV; bring as much of it into view as possible without pushing the TV off the top.
