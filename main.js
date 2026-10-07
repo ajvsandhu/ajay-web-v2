@@ -219,6 +219,17 @@ function cancelTransition() {
   transitioning = false;
   lockControls(false);
 }
+// Phones show the experience row's role and dates on the TV; rows only print the year on the first row of each year.
+function roleLine(key) {
+  const rows = [...document.querySelectorAll('.experience')];
+  const index = rows.findIndex(row => row.dataset.channel === key);
+  if (index < 0) return '';
+  const text = (row, selector) => row.querySelector(selector).textContent.trim();
+  const year = rows.slice(0, index + 1).reverse().map(row => text(row, '.year')).find(Boolean) || '';
+  const dates = text(rows[index], '.dates');
+  const when = !dates ? year : /\d{4}/.test(dates) ? dates : `${dates} ${year}`.trim();
+  return [text(rows[index], '.title'), when].filter(Boolean).join(' · ');
+}
 function showChannel(key) {
   cancelTransition();
   $('#off-screen').hidden = true;
@@ -236,6 +247,8 @@ function showChannel(key) {
   else { const mark = document.createElement('span'); mark.className = 'placeholder-mark'; mark.textContent = key === 'home' ? 'AS' : item.number; const label = document.createElement('span'); label.className = 'placeholder-label'; label.textContent = item.placeholder; visual.append(mark, label); }
   const caption = document.createElement('p'); caption.className = 'channel-caption'; caption.textContent = item.caption;
   if (key !== 'home') { const label = document.createElement('div'); label.className = 'channel-id'; label.textContent = (item.label || item.title).toUpperCase(); channel.append(label); }
+  const role = roleLine(key);
+  if (role) { const line = document.createElement('div'); line.className = 'channel-role'; line.textContent = role; channel.append(line); }
   channel.append(visual, caption); channel.hidden = false;
   document.body.classList.add('on');
   $('#experience-list').inert = false;
@@ -280,7 +293,7 @@ $('#power').addEventListener('click', () => {
 function revealExperience() {
   if (!matchMedia('(max-width: 760px)').matches) return;
   const tvTop = $('#television').getBoundingClientRect().top + window.scrollY - 16;
-  const listEnd = $('.work').getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 24;
+  const listEnd = $('.work').getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 36 + $('#contact-bar').offsetHeight;
   const top = Math.max(window.scrollY, Math.min(tvTop, listEnd));
   window.scrollTo({ top, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
 }
@@ -381,6 +394,44 @@ $('#name').addEventListener('pointermove', event => {
   nameTag.classList.add('visible');
 });
 $('#name').addEventListener('pointerleave', () => { clearInterval(decodeTimer); nameTag.classList.remove('visible'); });
+// On phones the name row scrolls away, so its links are repeated in a bar pinned to the bottom of the screen.
+const contactBar = $('#contact-bar');
+for (const link of $('.socials').children) {
+  const copy = link.cloneNode(true);
+  copy.className = 'contact-link';
+  copy.removeAttribute('aria-label');
+  const label = document.createElement('span');
+  label.textContent = link.getAttribute('aria-label');
+  copy.append(label);
+  contactBar.append(copy);
+}
+new IntersectionObserver(([entry]) => contactBar.classList.toggle('out-of-view', !entry.isIntersecting)).observe($('.socials'));
+// mailto: does nothing on machines without a mail app, so email links open a panel with the address and webmail options.
+const emailDialog = $('#email-dialog');
+document.addEventListener('click', event => {
+  const link = event.target.closest?.('a[href^="mailto:"]');
+  if (!link || emailDialog.contains(link) || !emailDialog.showModal) return;
+  event.preventDefault();
+  $('#copy-email').textContent = 'Copy address';
+  emailDialog.showModal();
+});
+$('#copy-email').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('#email-address').textContent); }
+  catch {
+    const range = document.createRange();
+    range.selectNodeContents($('#email-address'));
+    getSelection().removeAllRanges(); getSelection().addRange(range);
+    document.execCommand('copy');
+  }
+  $('#copy-email').textContent = 'Copied';
+  clickSound();
+});
+$('#close-email').addEventListener('click', () => emailDialog.close());
+emailDialog.addEventListener('click', event => {
+  if (event.target !== emailDialog) return;
+  const r = emailDialog.getBoundingClientRect();
+  if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) emailDialog.close();
+});
 placeSignLight();
 addEventListener('resize', placeSignLight);
 addEventListener('scroll', placeSignLight, { passive: true });
