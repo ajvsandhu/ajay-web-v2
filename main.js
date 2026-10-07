@@ -25,6 +25,8 @@ function preloadClip() {
   nextClip.load();
 }
 preloadClip();
+// Power-on scrolls phones down to the TV; without this, reloading reopens there with the name off-screen.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 let powered = false;
 let current = 'home';
 let transitioning = false;
@@ -108,6 +110,11 @@ try {
   audio.suspend().catch(() => {});
   audio.addEventListener('statechange', () => { if (!powered && audio.state === 'running') audio.suspend().catch(() => {}); });
 } catch { /* No audio support. */ }
+// Switching tabs, switching apps or locking the phone hides the page; sound pauses until it's visible again.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { audio?.suspend().catch(() => {}); clip?.pause(); }
+  else if (powered) { audio?.resume().catch(() => {}); clip?.play().catch(() => {}); }
+});
 async function startLoop(loop) {
   try {
     const data = await loop.data;
