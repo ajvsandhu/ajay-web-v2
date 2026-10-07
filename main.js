@@ -292,6 +292,9 @@ function surge(delay, first = false) {
     }
   }, delay);
 }
+// Visitors who haven't found the power button after a few seconds get a prompt on the screen.
+const POWER_HINT_DELAY = 5000;
+setTimeout(() => { if (!powered) document.body.classList.add('hinting'); }, POWER_HINT_DELAY);
 $('#power').addEventListener('click', () => {
   redButtonSound(powered ? 1 : 0.5);
   surge(0, !powered);
