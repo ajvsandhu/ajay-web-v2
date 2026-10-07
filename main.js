@@ -112,16 +112,33 @@ try {
   audio.addEventListener('statechange', () => { if (!powered && audio.state === 'running') audio.suspend().catch(() => {}); });
 } catch { /* No audio support. */ }
 // Switching tabs, switching apps or locking the phone hides the page; sound pauses until it's visible again.
+// iOS can hand back a context that reports 'running' but stays silent, so phones rebuild it on the next tap instead.
+let audioStale = false;
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { audio?.suspend().catch(() => {}); clip?.pause(); }
+  if (document.hidden) { audio?.suspend().catch(() => {}); clip?.pause(); audioStale = matchMedia('(pointer: coarse)').matches; }
   else if (powered) { if (volume) audio?.resume().catch(() => {}); clip?.play().catch(() => {}); }
 });
+function rebuildAudio() {
+  audioStale = false;
+  const old = audio;
+  try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch { return; }
+  staticSound = null;
+  old?.close().catch(() => {});
+  loops.forEach(startLoop);
+  setStaticSound($('#static').classList.contains('active'));
+}
+for (const type of ['touchend', 'click']) {
+  document.addEventListener(type, () => { if (audioStale && powered && volume) rebuildAudio(); }, true);
+}
 async function startLoop(loop) {
   try {
-    const data = await loop.data;
-    if (!data) return;
+    if (!loop.buffer) {
+      const data = await loop.data;
+      if (!data) return;
+      loop.buffer = await audio.decodeAudioData(data);
+    }
     const source = audio.createBufferSource();
-    source.buffer = await audio.decodeAudioData(data);
+    source.buffer = loop.buffer;
     source.loop = true;
     const { center, depth } = loopLevels(loop);
     loop.gain = audio.createGain();
@@ -198,6 +215,7 @@ function updateVolume() {
 function toggleMute() {
   if (volume) { volumeBeforeMute = volume; volume = 0; }
   else { volume = volumeBeforeMute || 0.5; }
+  if (audioStale && volume && powered) rebuildAudio();
   updateVolume(); clickSound();
 }
 $('#volume').addEventListener('click', toggleMute);
